@@ -20,10 +20,10 @@ jobs:
         uses: microsoft/setup-msbuild@v1
 
       - name: Restore NuGet packages (if needed)
-        run: nuget restore YourProject.sln
+        run: nuget restore HackMe.sln
 
       - name: Build with MSBuild
-        run: msbuild YourProject.sln /p:Configuration=Release /p:Platform=x64
+        run: msbuild HackMe.sln /p:Configuration=Release /p:Platform=x64
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
