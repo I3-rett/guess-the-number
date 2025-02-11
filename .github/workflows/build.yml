@@ -1,12 +1,10 @@
-name: Build Windows Binary
+name: Build and Release HackMe
 
 on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   build:
@@ -25,8 +23,41 @@ jobs:
       - name: Build with MSBuild
         run: msbuild HackMe.sln /p:Configuration=Release /p:Platform=x64
 
-      - name: Upload binary
+      - name: Decode Certificate
+        run: |
+          echo "${{ secrets.CERTIFICATE_BASE64 }}" | certutil -decode - HackMeCert.pfx
+
+      - name: Import Certificate
+        run: |
+          certutil -f -p "${{ secrets.CERTIFICATE_PASSWORD }}" -importpfx HackMeCert.pfx
+
+      - name: Sign Executable
+        run: |
+          signtool sign /fd SHA256 /a /tr http://timestamp.digicert.com /td SHA256 "HackMe/Release/HackMe.exe"
+
+      - name: Upload signed binary
         uses: actions/upload-artifact@v4
         with:
-          name: windows-binary
+          name: HackMe-windows-signed
           path: "**/Release/*.exe"
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download signed binary
+        uses: actions/download-artifact@v4
+        with:
+          name: HackMe-windows-signed
+          path: bin/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: HackMe Release v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: bin/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
