@@ -1,0 +1,32 @@
+name: Build Windows Binary
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Restore NuGet packages (if needed)
+        run: nuget restore YourProject.sln
+
+      - name: Build with MSBuild
+        run: msbuild YourProject.sln /p:Configuration=Release /p:Platform=x64
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: "**/Release/*.exe"
